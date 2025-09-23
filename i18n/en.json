@@ -1,0 +1,61 @@
+{
+  "app": {
+    "title": "Cloudflare DNS Manager"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "dns": "DNS Records",
+    "blacklist": "Blacklist",
+    "users": "Users",
+    "logout": "Logout"
+  },
+  "dns": {
+    "add": "Add Record",
+    "edit": "Edit",
+    "delete": "Delete",
+    "type": "Type",
+    "name": "Name",
+    "content": "Content",
+    "ttl": "TTL",
+    "proxied": "Proxied",
+    "empty": "No DNS records found.",
+    "created": "Record created successfully.",
+    "updated": "Record updated successfully.",
+    "deleted": "Record deleted successfully."
+  },
+  "blacklist": {
+    "title": "Blacklist",
+    "field": "Field",
+    "pattern": "Pattern",
+    "type": "Type",
+    "is_regex": "Regex",
+    "description": "Description",
+    "created": "Blacklist entry created.",
+    "updated": "Blacklist entry updated.",
+    "deleted": "Blacklist entry deleted."
+  },
+  "users": {
+    "title": "Users",
+    "email": "Email",
+    "role": "Role",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "change_role": "Change Role",
+    "deactivate": "Deactivate"
+  },
+  "msg": {
+    "saved": "Saved successfully.",
+    "deleted": "Deleted successfully.",
+    "confirm": "Are you sure?"
+  },
+  "err": {
+    "validation": "Some fields are invalid.",
+    "unauthorized": "Please login.",
+    "forbidden": "You do not have permission.",
+    "not_found": "Not found.",
+    "blacklist_blocked": "This record matches a blacklist rule.",
+    "cf_api_error": "Cloudflare API error.",
+    "server_error": "Server error."
+  }
+}

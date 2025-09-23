@@ -1,0 +1,52 @@
+# Cursor Rules — Cloudflare DNS Manager
+
+## Objective
+- สร้างระบบ Next.js 14 (App Router) + TypeScript + Tailwind + shadcn/ui + Drizzle (Postgres) + NextAuth Credentials + Zod validations
+- เชื่อม Cloudflare API (v4) ด้วย token/zone จาก env
+- รองรับ i18n (TH/EN) ผ่านไฟล์ JSON
+- ใช้ RBAC: user/admin/owner
+- มี audit log + blacklist
+
+## Hard Constraints
+- ห้าม hardcode secret/zone; ต้องอ่านจาก env เท่านั้น
+- ต้องมี Zod validate ทุก input ที่เข้า API route
+- Handle error ทุกเคส พร้อมข้อความ i18n
+- UI ต้องมีสถานะ: loading/empty/error/success ครบ
+- ทุก mutation (create/update/delete/role change/blacklist ops) ต้องเขียน audit log
+- เขียนโค้ดสื่อความชัดเจน, แยก layer (`/lib`, `/db`, `/app/api`, `/app/(routes)`) ชัดเจน
+
+## Coding Style
+- TS strict, ESM only, no default-any
+- ชื่อไฟล์/โมดูล: kebab-case; ตัวแปร/ฟังก์ชัน: camelCase; database columns: snake_case
+- ใช้ React Server Components (RSC) เป็นค่าเริ่มต้น; ใช้ Client Component เท่าที่จำเป็น (ฟอร์ม/อินเตอร์แอคทีฟ)
+- UI ด้วย shadcn/ui + Tailwind utility-first; หลีกเลี่ยง CSS เฉพาะกิจ
+- ใช้ React Hook Form + Zod สำหรับฟอร์ม
+- Toast ด้วย `sonner` หรือ shadcn toast
+- วันเวลาเก็บเป็น UTC ใน DB
+- Logs ด้วย `pino` (server-side); ไม่ log secrets
+
+## Security
+- Password hash ด้วย `bcrypt` หรือ `argon2`
+- JWT cookies: `secure`, `httpOnly`, `sameSite=lax` (ปรับตาม production)
+- Rate-limit login/register และ DNS mutations (เช่น upstash/redis หรือ simple in-memory for dev)
+- CSRF ป้องกันในหน้า form ที่ใช้ action (ถ้าไม่ใช้ RSC forms)
+- ตรวจสิทธิ์ทั้ง server (API) และ UI (feature gating)
+
+## Testing & QA
+- Unit: validators/matchers/CF API wrapper
+- Integration: API routes
+- E2E (option): Playwright เคสหลัก (login, view, create/edit/delete record, blacklist block, role change)
+
+## Deliverables
+- โครงโปรเจกต์ตาม `structure.md`
+- ฟังก์ชันตาม `api-contracts.md`
+- สคีมาตาม `db/schema.ts`
+- UI ตาม `ui-spec.md`
+- Translations จาก `i18n/*.json`
+- Seed script สร้าง owner
+
+## Definition of Done (DoD)
+- Build ผ่าน, type check ผ่าน
+- ฟีเจอร์ทุกข้อใน `requirements.md` ทำงานครบ พร้อมข้อความ TH/EN
+- ไม่มี secret ใน repo; ใช้ `.env` เท่านั้น
+- มี audit log เกิดขึ้นสำหรับทุก mutation

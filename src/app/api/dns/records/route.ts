@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
         name: validatedData.name,
         content: validatedData.content,
       },
-      blacklistRules.map(rule => ({
+      blacklistRules.map((rule: any) => ({
         id: rule.id,
         field: rule.field as 'name' | 'content' | 'both',
         pattern: rule.pattern,

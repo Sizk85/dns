@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const blacklistRules = await db.select().from(blacklist);
 
     return apiSuccess({
-      items: blacklistRules.map(rule => ({
+      items: blacklistRules.map((rule: any) => ({
         id: rule.id,
         field: rule.field,
         pattern: rule.pattern,

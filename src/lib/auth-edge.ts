@@ -34,6 +34,11 @@ function decodeJWTPayload(token: string): SessionData | null {
 
 export async function getSessionFromCookie(): Promise<SessionData | null> {
   try {
+    // Skip auth check if no AUTH_SECRET (during build)
+    if (!process.env.AUTH_SECRET) {
+      return null;
+    }
+
     const cookieStore = await cookies();
     const token = cookieStore.get('session')?.value;
     
@@ -42,7 +47,8 @@ export async function getSessionFromCookie(): Promise<SessionData | null> {
     // Only decode payload, don't verify signature in middleware
     // Full verification happens in server components
     return decodeJWTPayload(token);
-  } catch {
+  } catch (error) {
+    console.error('Edge auth error:', error);
     return null;
   }
 }

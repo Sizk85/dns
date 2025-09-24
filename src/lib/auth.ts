@@ -64,6 +64,12 @@ export async function createSession(userId: number): Promise<string> {
 
 export async function getSession(): Promise<SessionUser | null> {
   try {
+    // Check if required env vars exist
+    if (!process.env.DATABASE_URL || !process.env.AUTH_SECRET) {
+      console.error('Missing required environment variables');
+      return null;
+    }
+
     const cookieStore = await cookies();
     const token = cookieStore.get(COOKIE_NAME)?.value;
     
@@ -94,7 +100,8 @@ export async function getSession(): Promise<SessionUser | null> {
     if (!sessionData[0]) return null;
 
     return sessionData[0].user;
-  } catch {
+  } catch (error) {
+    console.error('Session error:', error);
     return null;
   }
 }

@@ -1,12 +1,9 @@
-'use client';
-
-import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Activity, Database, Shield, Users } from 'lucide-react';
-import { useTranslation } from '@/lib/i18n';
+import { getSession } from '@/lib/auth';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 interface DashboardStats {
   dnsRecords: number;
@@ -35,110 +32,23 @@ interface User {
   name: string | null;
 }
 
-export default function DashboardPage() {
-  const { t } = useTranslation();
-  const [user, setUser] = useState<User | null>(null);
-  const [stats, setStats] = useState<DashboardStats>({
-    dnsRecords: 0,
-    blacklistRules: 0,
-    totalUsers: 0,
-  });
-  const [recentLogs, setRecentLogs] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchUser = async () => {
-    try {
-      const response = await fetch('/api/auth/session');
-      const result = await response.json();
-      if (result.ok) {
-        setUser(result.data.user);
-      }
-    } catch (error) {
-      console.error('Failed to fetch user:', error);
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      const [dnsRes, blacklistRes, usersRes] = await Promise.all([
-        fetch('/api/dns/records'),
-        fetch('/api/blacklist').catch(() => null),
-        fetch('/api/users').catch(() => null),
-      ]);
-
-      const dnsData = await dnsRes.json();
-      const blacklistData = blacklistRes ? await blacklistRes.json() : { ok: false };
-      const usersData = usersRes ? await usersRes.json() : { ok: false };
-
-      setStats({
-        dnsRecords: dnsData.ok ? dnsData.data.items.length : 0,
-        blacklistRules: blacklistData.ok ? blacklistData.data.items.length : 0,
-        totalUsers: usersData.ok ? usersData.data.items.length : 0,
-      });
-    } catch (error) {
-      console.error('Failed to fetch stats:', error);
-    }
-  };
-
-  const fetchRecentLogs = async () => {
-    try {
-      const response = await fetch('/api/audit?limit=5');
-      const result = await response.json();
-      if (result.ok) {
-        setRecentLogs(result.data.items);
-      }
-    } catch (error) {
-      console.error('Failed to fetch audit logs:', error);
-    }
-  };
-
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      await Promise.all([
-        fetchUser(),
-        fetchStats(),
-        fetchRecentLogs(),
-      ]);
-      setLoading(false);
-    };
-    loadData();
-  }, []);
-
-  const getActionBadgeColor = (action: string) => {
-    if (action.includes('create')) return 'bg-green-100 text-green-800';
-    if (action.includes('update')) return 'bg-blue-100 text-blue-800';
-    if (action.includes('delete')) return 'bg-red-100 text-red-800';
-    return 'bg-gray-100 text-gray-800';
-  };
-
-  const formatAction = (action: string) => {
-    const actionMap: Record<string, string> = {
-      'dns.create': 'สร้าง DNS Record',
-      'dns.update': 'อัปเดต DNS Record',
-      'dns.delete': 'ลบ DNS Record',
-      'blacklist.create': 'สร้างกฎ Blacklist',
-      'blacklist.update': 'อัปเดตกฎ Blacklist',
-      'blacklist.delete': 'ลบกฎ Blacklist',
-      'user.role_change': 'เปลี่ยนบทบาทผู้ใช้',
-      'user.deactivate': 'ปิดการใช้งานผู้ใช้',
-      'user.activate': 'เปิดการใช้งานผู้ใช้',
-      'auth.login': 'เข้าสู่ระบบ',
-      'auth.logout': 'ออกจากระบบ',
-    };
-    return actionMap[action] || action;
-  };
+export default async function DashboardPage() {
+  const user = await getSession();
+  
+  if (!user) {
+    redirect('/login');
+  }
 
   return (
     <div className="px-4 sm:px-0">
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
         <p className="mt-1 text-sm text-gray-600">
-          ยินดีต้อนรับ {user?.name || user?.email}
+          ยินดีต้อนรับ {user.name || user.email}
         </p>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Simplified for server component */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -146,29 +56,21 @@ export default function DashboardPage() {
             <Database className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <div className="text-2xl font-bold">{stats.dnsRecords}</div>
-            )}
+            <div className="text-2xl font-bold">-</div>
             <p className="text-xs text-muted-foreground">
               รายการทั้งหมด
             </p>
           </CardContent>
         </Card>
 
-        {(['admin', 'owner'].includes(user?.role || '')) && (
+        {(['admin', 'owner'].includes(user.role)) && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Blacklist Rules</CardTitle>
               <Shield className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              {loading ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                <div className="text-2xl font-bold">{stats.blacklistRules}</div>
-              )}
+              <div className="text-2xl font-bold">-</div>
               <p className="text-xs text-muted-foreground">
                 กฎทั้งหมด
               </p>
@@ -176,18 +78,14 @@ export default function DashboardPage() {
           </Card>
         )}
 
-        {user?.role === 'owner' && (
+        {user.role === 'owner' && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              {loading ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                <div className="text-2xl font-bold">{stats.totalUsers}</div>
-              )}
+              <div className="text-2xl font-bold">-</div>
               <p className="text-xs text-muted-foreground">
                 ผู้ใช้ทั้งหมด
               </p>
@@ -196,7 +94,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Recent Activity */}
+      {/* Recent Activity - Simplified */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -210,44 +108,9 @@ export default function DashboardPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="space-y-3">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="flex items-center space-x-4">
-                  <Skeleton className="h-4 w-4 rounded" />
-                  <Skeleton className="h-4 flex-1" />
-                  <Skeleton className="h-4 w-20" />
-                </div>
-              ))}
-            </div>
-          ) : recentLogs.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              ยังไม่มีกิจกรรม - จะแสดงหลังจากมีการทำงานในระบบ
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {recentLogs.map((log) => (
-                <div key={log.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                  <div className="flex items-center space-x-3">
-                    <Badge className={getActionBadgeColor(log.action)}>
-                      {formatAction(log.action)}
-                    </Badge>
-                    <div>
-                      <p className="text-sm font-medium">
-                        {log.actor.name || log.actor.email}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {log.target_type} {log.target_id && `(${log.target_id})`}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {new Date(log.created_at).toLocaleString('th-TH')}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <p className="text-sm text-muted-foreground text-center py-4">
+            ยังไม่มีกิจกรรม - จะแสดงหลังจากมีการทำงานในระบบ
+          </p>
         </CardContent>
       </Card>
 
@@ -266,7 +129,7 @@ export default function DashboardPage() {
           </Card>
         </Link>
 
-        {(['admin', 'owner'].includes(user?.role || '')) && (
+        {(['admin', 'owner'].includes(user.role)) && (
           <Link href="/blacklist" className="group">
             <Card className="hover:shadow-md transition-shadow">
               <CardContent className="pt-6">
@@ -281,7 +144,7 @@ export default function DashboardPage() {
           </Link>
         )}
 
-        {user?.role === 'owner' && (
+        {user.role === 'owner' && (
           <Link href="/users" className="group">
             <Card className="hover:shadow-md transition-shadow">
               <CardContent className="pt-6">

@@ -46,8 +46,8 @@ function LoginForm() {
 
       toast.success('เข้าสู่ระบบสำเร็จ');
       
-      // Redirect to intended page or dashboard
-      const from = searchParams?.get('from') || '/dashboard';
+      // Redirect to intended page or home
+      const from = searchParams?.get('from') || '/';
       router.push(from as any);
       router.refresh();
 

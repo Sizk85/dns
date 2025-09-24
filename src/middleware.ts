@@ -4,7 +4,6 @@ import { getSessionFromCookie } from '@/lib/auth-edge';
 
 // Protected routes that require authentication
 const protectedRoutes = [
-  '/dashboard',
   '/dns',
   '/users',
   '/blacklist',
@@ -39,16 +38,16 @@ export async function middleware(request: NextRequest) {
 
   // If accessing auth route while already authenticated
   if (isAuthRoute && user) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
   // Role-based route protection
   if (user && pathname.startsWith('/users') && user.role !== 'owner') {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
   if (user && pathname.startsWith('/blacklist') && !['admin', 'owner'].includes(user.role)) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
   return NextResponse.next();

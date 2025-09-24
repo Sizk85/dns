@@ -9,8 +9,26 @@ import { eq, and } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { email, password } = loginSchema.parse(body);
+    // Handle both JSON and form data
+    let email: string, password: string;
+    
+    const contentType = request.headers.get('content-type');
+    
+    if (contentType?.includes('application/x-www-form-urlencoded')) {
+      const formData = await request.formData();
+      email = formData.get('email') as string;
+      password = formData.get('password') as string;
+      
+      // Basic validation for form data
+      if (!email || !password) {
+        return apiError('validation_error', 'Email and password are required', 400);
+      }
+    } else {
+      const body = await request.json();
+      const parsed = loginSchema.parse(body);
+      email = parsed.email;
+      password = parsed.password;
+    }
 
     // Find user by email
     const [user] = await db
@@ -36,24 +54,27 @@ export async function POST(request: NextRequest) {
     const token = await createSession(user.id);
     await setSessionCookie(token);
 
-    // Create audit log
-    await createAuditLog(
-      { id: user.id, email: user.email, role: user.role, name: user.name },
-      {
-        action: AuditActions.USER_LOGIN,
-        target_type: AuditTargetTypes.USER,
-        target_id: user.id.toString(),
-        metadata: {
-          ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
-          user_agent: request.headers.get('user-agent'),
-        },
-      }
-    );
+    // Create audit log (skip if error to not break login)
+    try {
+      await createAuditLog(
+        { id: user.id, email: user.email, role: user.role, name: user.name },
+        {
+          action: AuditActions.USER_LOGIN,
+          target_type: AuditTargetTypes.USER,
+          target_id: user.id.toString(),
+          metadata: {
+            ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+            user_agent: request.headers.get('user-agent'),
+          },
+        }
+      );
+    } catch (auditError) {
+      console.error('Audit log failed:', auditError);
+      // Continue with login even if audit fails
+    }
 
     // For form submission, redirect instead of JSON response
-    const isFormSubmission = request.headers.get('content-type')?.includes('application/x-www-form-urlencoded');
-    
-    if (isFormSubmission) {
+    if (contentType?.includes('application/x-www-form-urlencoded')) {
       return NextResponse.redirect(new URL('/', request.url));
     }
 

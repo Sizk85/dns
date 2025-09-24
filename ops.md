@@ -7,10 +7,18 @@
 - `pnpm drizzle-kit generate && pnpm drizzle-kit push`
 - `pnpm dev`
 
-## Deploy (ตัวอย่าง Coolify)
-- ตั้ง env ตาม `env.example`
-- Build command: `pnpm build`
-- Start: `pnpm start`
+## Deploy
+
+### Docker (Coolify/Railway/Render)
+- Repository: https://github.com/Sizk85/dns.git
+- Build: Docker (ใช้ Dockerfile ที่มีอยู่)
+- Port: 3000
+- Environment variables ตาม `env.example`
+
+### Manual Deploy
+- Build command: `npm run build`
+- Start: `npm start`
+- Port: 3000
 
 ## Notes
 - หากมีแต่ `CF_ZONE_NAME` ให้ทำ lookup `zone_id` หนึ่งครั้งตอนบูต แล้ว cache ใน memory

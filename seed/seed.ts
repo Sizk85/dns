@@ -13,7 +13,7 @@ async function main() {
   const db = drizzle(client);
 
   const email = process.env.SEED_OWNER_EMAIL || 'owner@example.com';
-  const password = process.env.SEED_OWNER_PASSWORD || 'ChangeMe123!';
+  const password = process.env.SEED_OWNER_PASSWORD || '1212312121.';
 
   const hash = await bcrypt.hash(password, 12);
 

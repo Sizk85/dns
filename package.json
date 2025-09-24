@@ -10,7 +10,8 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "tsx seed/seed.ts"
+    "db:seed": "tsx seed/seed.ts",
+    "setup": "node setup.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

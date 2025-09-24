@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  typedRoutes: true,
+  typedRoutes: false, // Disable for production build
   eslint: {
     dirs: ['src'],
   },

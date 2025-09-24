@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db/client';
 import { users } from '@/db/schema';
 import { loginSchema } from '@/lib/validation/user';
@@ -49,6 +49,13 @@ export async function POST(request: NextRequest) {
         },
       }
     );
+
+    // For form submission, redirect instead of JSON response
+    const isFormSubmission = request.headers.get('content-type')?.includes('application/x-www-form-urlencoded');
+    
+    if (isFormSubmission) {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
 
     return apiSuccess({
       token,

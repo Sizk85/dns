@@ -1,9 +1,9 @@
-import { getSession } from '@/lib/auth';
+import { getAuthUser } from '@/lib/simple-auth';
 import { apiSuccess, apiError } from '@/lib/api';
 
 export async function GET() {
   try {
-    const user = await getSession();
+    const user = await getAuthUser();
     
     if (!user) {
       return apiError('unauthorized', 'No active session', 401);
@@ -16,7 +16,7 @@ export async function GET() {
         role: user.role,
         name: user.name,
       },
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     });
 
   } catch (error) {

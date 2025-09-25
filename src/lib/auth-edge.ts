@@ -1,15 +1,14 @@
 // Edge-compatible auth helpers for middleware
-// ไม่ใช้ jsonwebtoken เนื่องจากไม่รองรับ Edge Runtime
 import { cookies } from 'next/headers';
 
 export interface SessionData {
-  userId: number;
+  id: number;
   email: string;
   role: 'user' | 'admin' | 'owner';
+  name: string | null;
 }
 
 // Simple JWT decode without verification for middleware
-// (Full verification happens in server components/API routes)
 function decodeJWTPayload(token: string): SessionData | null {
   try {
     const parts = token.split('.');
@@ -23,9 +22,10 @@ function decodeJWTPayload(token: string): SessionData | null {
     }
     
     return {
-      userId: payload.userId,
+      id: payload.id,
       email: payload.email,
       role: payload.role,
+      name: payload.name,
     };
   } catch {
     return null;
@@ -34,18 +34,12 @@ function decodeJWTPayload(token: string): SessionData | null {
 
 export async function getSessionFromCookie(): Promise<SessionData | null> {
   try {
-    // Skip auth check if no AUTH_SECRET (during build)
-    if (!process.env.AUTH_SECRET) {
-      return null;
-    }
-
     const cookieStore = await cookies();
-    const token = cookieStore.get('session')?.value;
+    const token = cookieStore.get('auth-token')?.value;
     
     if (!token) return null;
 
     // Only decode payload, don't verify signature in middleware
-    // Full verification happens in server components
     return decodeJWTPayload(token);
   } catch (error) {
     console.error('Edge auth error:', error);

@@ -1,9 +1,8 @@
-import { getSession } from '@/lib/auth';
-import { redirect } from 'next/navigation';
+import { getAuthUser } from '@/lib/simple-auth';
 import { LoginForm } from '@/components/login-form';
 
 export default async function HomePage() {
-  const user = await getSession();
+  const user = await getAuthUser();
 
   // If no user, show login form directly instead of redirect
   if (!user) {

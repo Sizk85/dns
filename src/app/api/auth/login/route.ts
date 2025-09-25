@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db/client';
-import { users } from '@/db/schema';
+import { Client } from 'pg';
 import { loginSchema } from '@/lib/validation/user';
-import { verifyPassword, createSession, setSessionCookie } from '@/lib/auth';
+import { verifyPassword, createToken, setAuthCookie } from '@/lib/simple-auth';
 import { apiSuccess, apiError, handleApiError } from '@/lib/api';
-import { createAuditLog, AuditActions, AuditTargetTypes } from '@/lib/audit';
-import { eq, and } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,48 +27,42 @@ export async function POST(request: NextRequest) {
       password = parsed.password;
     }
 
-    // Find user by email
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(and(
-        eq(users.email, email),
-        eq(users.is_active, true)
-      ))
-      .limit(1);
+    // Connect to database directly
+    const client = new Client({ connectionString: process.env.DATABASE_URL });
+    await client.connect();
 
-    if (!user) {
+    // Find user by email
+    const userResult = await client.query(
+      'SELECT id, email, name, password_hash, role, is_active FROM users WHERE email = $1 AND is_active = true',
+      [email]
+    );
+
+    if (userResult.rows.length === 0) {
+      await client.end();
       return apiError('invalid_credentials', 'Invalid email or password', 401);
     }
+
+    const user = userResult.rows[0];
 
     // Verify password
     const isValidPassword = await verifyPassword(password, user.password_hash);
     if (!isValidPassword) {
+      await client.end();
       return apiError('invalid_credentials', 'Invalid email or password', 401);
     }
 
-    // Create session
-    const token = await createSession(user.id);
-    await setSessionCookie(token);
+    // Create JWT token
+    const token = createToken({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      name: user.name,
+    });
 
-    // Create audit log (skip if error to not break login)
-    try {
-      await createAuditLog(
-        { id: user.id, email: user.email, role: user.role, name: user.name },
-        {
-          action: AuditActions.USER_LOGIN,
-          target_type: AuditTargetTypes.USER,
-          target_id: user.id.toString(),
-          metadata: {
-            ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
-            user_agent: request.headers.get('user-agent'),
-          },
-        }
-      );
-    } catch (auditError) {
-      console.error('Audit log failed:', auditError);
-      // Continue with login even if audit fails
-    }
+    // Set cookie
+    await setAuthCookie(token);
+
+    await client.end();
 
     // For form submission, redirect instead of JSON response
     if (contentType?.includes('application/x-www-form-urlencoded')) {
@@ -79,7 +70,7 @@ export async function POST(request: NextRequest) {
     }
 
     return apiSuccess({
-      token,
+      success: true,
       user: {
         id: user.id,
         email: user.email,

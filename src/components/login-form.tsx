@@ -21,7 +21,10 @@ export function LoginForm() {
       const result = await response.json();
       
       if (result.ok) {
-        window.location.href = '/';
+        // Wait a bit for cookie to be set, then reload
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
       } else {
         alert('Login failed: ' + (result.error?.message || 'Unknown error'));
       }

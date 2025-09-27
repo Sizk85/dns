@@ -5,21 +5,13 @@ function getEnvVars() {
   const CF_ZONE_ID = process.env.CF_ZONE_ID;
   const CF_ZONE_NAME = process.env.CF_ZONE_NAME;
 
-  // Skip validation during build time
-  if (process.env.NODE_ENV === 'production' && !CF_API_TOKEN) {
+  // Always return dummy values if not configured (for demo mode)
+  if (!CF_API_TOKEN || (!CF_ZONE_ID && !CF_ZONE_NAME)) {
     return { 
       CF_API_TOKEN: 'dummy', 
       CF_ZONE_ID: 'dummy', 
-      CF_ZONE_NAME: 'dummy' 
+      CF_ZONE_NAME: 'example.com' 
     };
-  }
-
-  if (!CF_API_TOKEN) {
-    throw new Error('CF_API_TOKEN is required');
-  }
-
-  if (!CF_ZONE_ID && !CF_ZONE_NAME) {
-    throw new Error('Either CF_ZONE_ID or CF_ZONE_NAME is required');
   }
 
   return { CF_API_TOKEN, CF_ZONE_ID, CF_ZONE_NAME };

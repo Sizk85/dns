@@ -106,12 +106,15 @@ export function RecordForm({ record, open, onClose, onSuccess }: RecordFormProps
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" aria-describedby="dns-form-description">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? t('dns.edit') : t('dns.add')} DNS Record
           </DialogTitle>
         </DialogHeader>
+        <div id="dns-form-description" className="sr-only">
+          Form สำหรับ{isEditing ? 'แก้ไข' : 'เพิ่ม'} DNS Record
+        </div>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

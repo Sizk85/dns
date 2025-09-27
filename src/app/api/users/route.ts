@@ -1,27 +1,34 @@
 import { NextRequest } from 'next/server';
-import { db } from '@/db/client';
-import { users } from '@/db/schema';
-import { getSession } from '@/lib/auth';
+import { Client } from 'pg';
+import { getAuthUser } from '@/lib/simple-auth';
 import { requireRole } from '@/lib/rbac';
-import { apiSuccess, apiError, handleApiError, withAuth } from '@/lib/api';
+import { apiSuccess, apiError, handleApiError } from '@/lib/api';
 
 export async function GET(request: NextRequest) {
-  return withAuth(async (user) => {
+  try {
+    const user = await getAuthUser();
+    
+    if (!user) {
+      return apiError('unauthorized', 'Authentication required', 401);
+    }
+
     if (!requireRole(user, 'owner')) {
       return apiError('forbidden', 'Only owners can view users', 403);
     }
 
-    const allUsers = await db.select({
-      id: users.id,
-      email: users.email,
-      name: users.name,
-      role: users.role,
-      is_active: users.is_active,
-      created_at: users.created_at,
-    }).from(users);
+    const client = new Client({ connectionString: process.env.DATABASE_URL });
+    await client.connect();
+
+    const result = await client.query(
+      'SELECT id, email, name, role, is_active, created_at FROM users ORDER BY created_at DESC'
+    );
+    
+    await client.end();
 
     return apiSuccess({
-      items: allUsers,
+      items: result.rows,
     });
-  });
+  } catch (error) {
+    return handleApiError(error);
+  }
 }

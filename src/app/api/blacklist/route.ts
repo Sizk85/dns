@@ -1,37 +1,44 @@
 import { NextRequest } from 'next/server';
-import { db } from '@/db/client';
-import { blacklist } from '@/db/schema';
+import { Client } from 'pg';
 import { createBlacklistSchema } from '@/lib/validation/blacklist';
-import { getSession } from '@/lib/auth';
+import { getAuthUser } from '@/lib/simple-auth';
 import { hasPermission } from '@/lib/rbac';
-import { apiSuccess, apiError, handleApiError, withAuth } from '@/lib/api';
-import { createAuditLog, AuditActions, AuditTargetTypes } from '@/lib/audit';
+import { apiSuccess, apiError, handleApiError } from '@/lib/api';
 
 export async function GET(request: NextRequest) {
-  return withAuth(async (user) => {
+  try {
+    const user = await getAuthUser();
+    
+    if (!user) {
+      return apiError('unauthorized', 'Authentication required', 401);
+    }
+
     if (!hasPermission(user, 'manageBlacklist')) {
       return apiError('forbidden', 'No permission to view blacklist', 403);
     }
 
-    const blacklistRules = await db.select().from(blacklist);
+    const client = new Client({ connectionString: process.env.DATABASE_URL });
+    await client.connect();
+
+    const result = await client.query('SELECT * FROM blacklist ORDER BY created_at DESC');
+    await client.end();
 
     return apiSuccess({
-      items: blacklistRules.map((rule: any) => ({
-        id: rule.id,
-        field: rule.field,
-        pattern: rule.pattern,
-        is_regex: rule.is_regex,
-        type: rule.type,
-        description: rule.description,
-        created_by: rule.created_by,
-        created_at: rule.created_at,
-      })),
+      items: result.rows,
     });
-  });
+  } catch (error) {
+    return handleApiError(error);
+  }
 }
 
 export async function POST(request: NextRequest) {
-  return withAuth(async (user) => {
+  try {
+    const user = await getAuthUser();
+    
+    if (!user) {
+      return apiError('unauthorized', 'Authentication required', 401);
+    }
+
     if (!hasPermission(user, 'manageBlacklist')) {
       return apiError('forbidden', 'No permission to create blacklist rules', 403);
     }
@@ -39,28 +46,25 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = createBlacklistSchema.parse(body);
 
-    const [newRule] = await db
-      .insert(blacklist)
-      .values({
-        field: validatedData.field,
-        pattern: validatedData.pattern,
-        is_regex: validatedData.is_regex,
-        type: validatedData.type,
-        description: validatedData.description || null,
-        created_by: user.id,
-      })
-      .returning();
+    const client = new Client({ connectionString: process.env.DATABASE_URL });
+    await client.connect();
 
-    // Create audit log
-    await createAuditLog(user, {
-      action: AuditActions.BLACKLIST_CREATE,
-      target_type: AuditTargetTypes.BLACKLIST,
-      target_id: newRule.id.toString(),
-      metadata: {
-        rule: validatedData,
-      },
-    });
+    const result = await client.query(
+      'INSERT INTO blacklist (field, pattern, is_regex, type, description, created_by) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [
+        validatedData.field,
+        validatedData.pattern,
+        validatedData.is_regex,
+        validatedData.type,
+        validatedData.description || null,
+        user.id,
+      ]
+    );
 
-    return apiSuccess(newRule, 201);
-  });
+    await client.end();
+
+    return apiSuccess(result.rows[0], 201);
+  } catch (error) {
+    return handleApiError(error);
+  }
 }

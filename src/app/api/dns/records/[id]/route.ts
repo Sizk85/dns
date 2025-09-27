@@ -24,14 +24,27 @@ export async function PATCH(
     const body = await request.json();
     const validatedData = PartialRecord.parse(body);
 
-    // Update record in Cloudflare
-    const cfResponse = await updateRecord(id, validatedData);
-
-    if (!cfResponse.success) {
-      return apiError('cf_api_error', cfResponse.errors?.[0]?.message || 'Failed to update DNS record', 502);
+    // For demo records, just return success
+    if (id.startsWith('demo-')) {
+      return apiSuccess({
+        id,
+        ...validatedData,
+        modified_on: new Date().toISOString(),
+      });
     }
 
-    return apiSuccess(cfResponse.result);
+    // Update record in Cloudflare (if configured)
+    try {
+      const cfResponse = await updateRecord(id, validatedData);
+
+      if (!cfResponse.success) {
+        return apiError('cf_api_error', cfResponse.errors?.[0]?.message || 'Failed to update DNS record', 502);
+      }
+
+      return apiSuccess(cfResponse.result);
+    } catch (cfError) {
+      return apiError('cf_api_error', 'Cloudflare API not configured', 502);
+    }
   } catch (error) {
     return handleApiError(error);
   }
@@ -54,14 +67,23 @@ export async function DELETE(
 
     const { id } = await params;
 
-    // Delete record from Cloudflare
-    const cfResponse = await deleteRecord(id);
-
-    if (!cfResponse.success) {
-      return apiError('cf_api_error', cfResponse.errors?.[0]?.message || 'Failed to delete DNS record', 502);
+    // For demo records, just return success
+    if (id.startsWith('demo-')) {
+      return apiSuccess({ id, deleted: true });
     }
 
-    return apiSuccess({ id, deleted: true });
+    // Delete record from Cloudflare (if configured)
+    try {
+      const cfResponse = await deleteRecord(id);
+
+      if (!cfResponse.success) {
+        return apiError('cf_api_error', cfResponse.errors?.[0]?.message || 'Failed to delete DNS record', 502);
+      }
+
+      return apiSuccess({ id, deleted: true });
+    } catch (cfError) {
+      return apiError('cf_api_error', 'Cloudflare API not configured', 502);
+    }
   } catch (error) {
     return handleApiError(error);
   }

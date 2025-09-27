@@ -3,6 +3,7 @@ import { PartialRecord } from '@/lib/validation/dns';
 import { getAuthUser } from '@/lib/simple-auth';
 import { hasPermission } from '@/lib/rbac';
 import { apiSuccess, apiError, handleApiError } from '@/lib/api';
+import { updateDemoRecord, deleteDemoRecord } from '@/lib/demo-dns';
 import { updateRecord, deleteRecord } from '@/lib/cloudflare';
 
 export async function PATCH(
@@ -24,13 +25,13 @@ export async function PATCH(
     const body = await request.json();
     const validatedData = PartialRecord.parse(body);
 
-    // For demo records, just return success
+    // For demo records, use demo system
     if (id.startsWith('demo-')) {
-      return apiSuccess({
-        id,
-        ...validatedData,
-        modified_on: new Date().toISOString(),
-      });
+      const demoResult = updateDemoRecord(id, validatedData);
+      if (!demoResult.success) {
+        return apiError('not_found', 'Record not found', 404);
+      }
+      return apiSuccess(demoResult.result);
     }
 
     // Update record in Cloudflare (if configured)
@@ -67,8 +68,12 @@ export async function DELETE(
 
     const { id } = await params;
 
-    // For demo records, just return success
+    // For demo records, use demo system
     if (id.startsWith('demo-')) {
+      const demoResult = deleteDemoRecord(id);
+      if (!demoResult.success) {
+        return apiError('not_found', 'Record not found', 404);
+      }
       return apiSuccess({ id, deleted: true });
     }
 

@@ -1,10 +1,9 @@
 import { NextRequest } from 'next/server';
-import { Client } from 'pg';
 import { AnyRecord } from '@/lib/validation/dns';
 import { getAuthUser } from '@/lib/simple-auth';
 import { hasPermission } from '@/lib/rbac';
 import { apiSuccess, apiError, handleApiError } from '@/lib/api';
-import { isBlocked, BlacklistBlockedError } from '@/lib/blacklist';
+import { getDemoRecords, createDemoRecord } from '@/lib/demo-dns';
 import { listRecords, createRecord } from '@/lib/cloudflare';
 
 export async function GET(request: NextRequest) {
@@ -27,30 +26,10 @@ export async function GET(request: NextRequest) {
 
     // Check if Cloudflare is configured
     if (!process.env.CF_API_TOKEN || !process.env.CF_ZONE_NAME) {
+      const demoData = getDemoRecords();
       return apiSuccess({
-        items: [
-          {
-            id: 'demo-1',
-            type: 'A',
-            name: 'www',
-            content: '192.168.1.1',
-            ttl: 300,
-            proxied: false,
-            created_on: new Date().toISOString(),
-            modified_on: new Date().toISOString(),
-          },
-          {
-            id: 'demo-2',
-            type: 'CNAME',
-            name: 'blog',
-            content: 'example.com',
-            ttl: 300,
-            proxied: true,
-            created_on: new Date().toISOString(),
-            modified_on: new Date().toISOString(),
-          }
-        ],
-        total: 2,
+        items: demoData.result,
+        total: demoData.result_info.total_count,
       });
     }
 
@@ -103,18 +82,18 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = AnyRecord.parse(body);
 
-    // For demo mode, return mock success
+    // For demo mode, use demo system
     if (!process.env.CF_API_TOKEN || !process.env.CF_ZONE_NAME) {
-      return apiSuccess({
-        id: `demo-${Date.now()}`,
+      const demoResult = createDemoRecord({
         type: validatedData.type,
         name: validatedData.name,
         content: validatedData.content,
         ttl: validatedData.ttl || 300,
         proxied: validatedData.proxied || false,
-        created_on: new Date().toISOString(),
-        modified_on: new Date().toISOString(),
-      }, 201);
+        priority: 'priority' in validatedData ? validatedData.priority : undefined,
+      });
+      
+      return apiSuccess(demoResult.result, 201);
     }
 
     // Create record in Cloudflare

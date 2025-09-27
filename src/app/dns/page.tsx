@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { RecordTable } from '@/components/dns/record-table';
+import { PageWrapper } from '@/components/page-wrapper';
 import { useTranslation } from '@/lib/i18n';
 import { toast } from 'sonner';
 
@@ -67,20 +68,17 @@ export default function DNSPage() {
   }, []);
 
   return (
-    <div className="px-4 sm:px-0">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">DNS Records</h2>
-        <p className="mt-1 text-sm text-gray-600">
-          จัดการบันทึก DNS ของโดเมนใน Cloudflare
-        </p>
-      </div>
-
+    <PageWrapper 
+      currentPage="dns" 
+      title="DNS Records" 
+      description="จัดการบันทึก DNS ของโดเมนใน Cloudflare"
+    >
       <RecordTable
         records={records}
         loading={loading}
         userRole={user?.role || 'user'}
         onRefresh={fetchRecords}
       />
-    </div>
+    </PageWrapper>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { BlacklistTable } from '@/components/blacklist/blacklist-table';
+import { PageWrapper } from '@/components/page-wrapper';
 import { useTranslation } from '@/lib/i18n';
 import { toast } from 'sonner';
 
@@ -45,19 +46,16 @@ export default function BlacklistPage() {
   }, []);
 
   return (
-    <div className="px-4 sm:px-0">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Blacklist Management</h2>
-        <p className="mt-1 text-sm text-gray-600">
-          จัดการกฎการบล็อกสำหรับป้องกันการสร้าง DNS Records ที่ไม่พึงประสงค์
-        </p>
-      </div>
-
+    <PageWrapper 
+      currentPage="blacklist" 
+      title="Blacklist Management" 
+      description="จัดการกฎการบล็อกสำหรับป้องกันการสร้าง DNS Records ที่ไม่พึงประสงค์"
+    >
       <BlacklistTable
         rules={rules}
         loading={loading}
         onRefresh={fetchRules}
       />
-    </div>
+    </PageWrapper>
   );
 }

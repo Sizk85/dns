@@ -35,19 +35,19 @@ export default async function HomePage() {
               </h1>
               
               <div className="hidden md:flex space-x-4">
-                <span className="text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+                <span className="text-gray-900 px-3 py-2 rounded-md text-sm font-medium bg-gray-100">
                   ภาพรวม
                 </span>
-                <a href="/dns" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+                <a href="/dns" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-50">
                   DNS Records
                 </a>
                 {(user.role === 'admin' || user.role === 'owner') && (
-                  <a href="/blacklist" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+                  <a href="/blacklist" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-50">
                     Blacklist
                   </a>
                 )}
                 {user.role === 'owner' && (
-                  <a href="/users" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+                  <a href="/users" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-50">
                     Users
                   </a>
                 )}

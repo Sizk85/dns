@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { UserTable } from '@/components/users/user-table';
+import { PageWrapper } from '@/components/page-wrapper';
 import { useTranslation } from '@/lib/i18n';
 import { toast } from 'sonner';
 
@@ -65,20 +66,17 @@ export default function UsersPage() {
   }, []);
 
   return (
-    <div className="px-4 sm:px-0">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">User Management</h2>
-        <p className="mt-1 text-sm text-gray-600">
-          จัดการผู้ใช้งานและบทบาทในระบบ (เฉพาะ Owner)
-        </p>
-      </div>
-
+    <PageWrapper 
+      currentPage="users" 
+      title="User Management" 
+      description="จัดการผู้ใช้งานและบทบาทในระบบ (เฉพาะ Owner)"
+    >
       <UserTable
         users={users}
         loading={loading}
         currentUserId={currentUser?.id || 0}
         onRefresh={fetchUsers}
       />
-    </div>
+    </PageWrapper>
   );
 }

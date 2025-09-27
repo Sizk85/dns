@@ -21,10 +21,9 @@ export function LoginForm() {
       const result = await response.json();
       
       if (result.ok) {
-        // Wait a bit for cookie to be set, then reload
-        setTimeout(() => {
-          window.location.reload();
-        }, 100);
+        // Success - redirect to dashboard
+        alert('เข้าสู่ระบบสำเร็จ!');
+        window.location.href = '/dns';
       } else {
         alert('Login failed: ' + (result.error?.message || 'Unknown error'));
       }
